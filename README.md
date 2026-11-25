@@ -56,101 +56,94 @@ Seluruh sistem mulai dari *rendering* 60 FPS *delta-time*, animasi karakter & ku
 
 ## 🔄 Alur Interaktif & Arsitektur
 
-> 💡 **Tips Interaktif (GitHub):** Arahkan kursor ke pojok kanan atas setiap diagram di bawah ini untuk menggunakan tombol **Zoom In (`+`)**, **Zoom Out (`-`)**, **Geser/Pan**, dan **Reset** agar alur sistem terlihat lebih detail.
+> 💡 **Tips Interaktif:** Arahkan kursor ke pojok kanan atas diagram untuk menggunakan fitur **Zoom** dan **Geser (Pan)**. Klik judul diagram 2 & 3 untuk membukanya agar halaman tetap ringan.
 
 ### 1. Alur Gameplay & State Machine
 ```mermaid
 stateDiagram-v2
     [*] --> MAIN_MENU
-    MAIN_MENU --> SETTINGS : Pengaturan (Audio, Resolusi, Bahasa)
-    MAIN_MENU --> HOW_TO_PLAY : Panduan
-    MAIN_MENU --> CREDITS : Kredit
-    MAIN_MENU --> LOBBY : Play Online / Host / Join
-    MAIN_MENU --> PLAYING : Play Offline (vs AI)
-
-    LOBBY --> PLAYING : Host klik Start Match
-    LOBBY --> MAIN_MENU : Leave Lobby
-
-    state PLAYING {
-        [*] --> Exploring
-        Exploring --> MiniGameTask : Tekan [E] di Terminal Task
-        MiniGameTask --> Exploring : Selesai / [ESC]
-        Exploring --> Surveillance : Tekan [E] di Admin / Security
-        Surveillance --> Exploring : Tutup / [ESC]
-        Exploring --> Venting : Impostor tekan [V]
-        Venting --> Exploring : Keluar Vent [V]
-    }
-
-    PLAYING --> MEETING : Emergency Button [E] / Report Body [R]
-    MEETING --> EJECTION : Voting Selesai / Waktu Habis
-    EJECTION --> PLAYING : Permainan Berlanjut
-    EJECTION --> GAME_OVER : Kondisi Menang/Kalah Terpenuhi
-    PLAYING --> GAME_OVER : Semua Task Selesai / Sabotase Kritis / Parity
-    GAME_OVER --> MAIN_MENU : Kembali ke Menu [ESC]
-    GAME_OVER --> PLAYING : Main Lagi [SPACE]
+    MAIN_MENU --> LOBBY : Host / Join Online
+    MAIN_MENU --> PLAYING : Play Offline (AI)
+    MAIN_MENU --> SETTINGS : Pengaturan
+    LOBBY --> PLAYING : Start Match
+    PLAYING --> MEETING : Emergency [E] / Report [R]
+    MEETING --> EJECTION : Voting Selesai
+    EJECTION --> PLAYING : Lanjut Main
+    EJECTION --> GAME_OVER : Menang / Kalah
+    PLAYING --> GAME_OVER : Task 100% / Sabotase / Parity
+    GAME_OVER --> MAIN_MENU : Kembali [ESC]
 ```
 
-### 2. Arsitektur Multithreading & Client-Server Networking
+<details>
+<summary><b>2. Klik untuk lihat: Arsitektur Multithreading & Client-Server</b></summary>
+<br/>
+
 ```mermaid
 flowchart LR
-    subgraph ClientApp["🖥️ Client Application (Pure Java)"]
-        EDT["Swing EDT\n(GameWindow & GamePanel)"]
-        GL["Thread: Starfall-GameLoop\n(60 FPS Delta-Time)"]
-        AUD["Threads: Starfall-Music & SFX\n(Java Sound API)"]
-        CLI["Threads: ClientReader & Writer\n(Non-Blocking TCP Socket)"]
+    subgraph Client["Client App (Pure Java)"]
+        EDT["Swing EDT"]
+        GL["GameLoop 60 FPS"]
+        AUD["AudioManager Threads"]
+        CLI["TCP Client Reader/Writer"]
     end
 
-    subgraph ServerApp["🌐 Authoritative GameServer (Port 25565)"]
-        ACC["Thread: ServerAcceptor\n(ServerSocket)"]
-        CH["Threads: ClientHandler\n(Per-Client Reader/Writer)"]
-        TICK["ScheduledExecutorService\n(20 Hz State Sync & Validation)"]
+    subgraph Server["GameServer (Port 25565)"]
+        ACC["ServerSocket Acceptor"]
+        CH["ClientHandler Threads"]
+        TICK["20Hz Tick Scheduler"]
     end
 
-    EDT <-->|Double-Buffered Render| GL
-    GL -->|Event Audio| AUD
-    GL <-->|ConcurrentLinkedQueue| CLI
-    CLI <==>|Custom Protocol\nMove, Kill, Task, Vote, Chat| CH
+    EDT <--> GL
+    GL --> AUD
+    GL <--> CLI
+    CLI <==>|Custom TCP Protocol| CH
     ACC --> CH
-    CH <-->|Synchronized Lock| TICK
+    CH <--> TICK
 ```
 
-### 3. Peta Konektivitas 14 Ruangan & Jaringan Vent
+</details>
+
+<details>
+<summary><b>3. Klik untuk lihat: Peta 14 Ruangan & Jaringan Vent</b></summary>
+<br/>
+
 ```mermaid
-graph LR
-    UE["Upper Engine"] --- MED["MedBay"]
-    UE --- CAFE["Cafeteria\n(Emergency Button)"]
-    UE --- REA["Reactor"]
-    UE --- SEC["Security\n(CCTV Cams)"]
-    UE --- LE["Lower Engine"]
-    REA --- SEC
-    REA --- LE
-    SEC --- LE
-    LE --- ELEC["Electrical"]
-    LE --- STOR["Storage"]
-    ELEC --- STOR
-    CAFE --- STOR
-    CAFE --- ADM["Admin\n(Sensor Table)"]
-    STOR --- ADM
-    CAFE --- WEAP["Weapons"]
-    WEAP --- O2["O2"]
-    WEAP --- NAV["Navigation"]
-    O2 --- NAV
-    NAV --- SHD["Shields"]
-    O2 --- SHD
-    STOR --- COMM["Communications"]
-    STOR --- SHD
-    COMM --- SHD
+flowchart TB
+    subgraph Kiri["Sisi Kiri Kapal"]
+        UE["Upper Engine"] --- MED["MedBay"]
+        UE --- REA["Reactor"]
+        UE --- SEC["Security"]
+        REA --- LE["Lower Engine"]
+        SEC --- LE
+        LE --- ELEC["Electrical"]
+    end
 
-    %% Jaringan Vent (Garis Putus-putus)
-    MED -. "Vent" .- ELEC
-    ELEC -. "Vent" .- SEC
-    SEC -. "Vent" .- MED
-    CAFE -. "Vent" .- ADM
-    ADM -. "Vent" .- WEAP
-    WEAP -. "Vent" .- CAFE
-    REA -. "Vent" .- UE
-    SHD -. "Vent" .- NAV
+    subgraph Tengah["Poros Tengah"]
+        CAFE["Cafeteria"] --- ADM["Admin"]
+        CAFE --- STOR["Storage"]
+        ADM --- STOR
+    end
+
+    subgraph Kanan["Sisi Kanan Kapal"]
+        WEAP["Weapons"] --- O2["O2"]
+        WEAP --- NAV["Navigation"]
+        O2 --- SHD["Shields"]
+        NAV --- SHD
+        COMM["Communications"] --- SHD
+    end
+
+    UE --- CAFE
+    ELEC --- STOR
+    CAFE --- WEAP
+    STOR --- COMM
+
+    MED -. Vent .- ELEC
+    CAFE -. Vent .- ADM
+    REA -. Vent .- UE
+    SHD -. Vent .- NAV
 ```
+
+</details>
 
 ---
 
