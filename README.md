@@ -50,7 +50,7 @@
 
 **STARFALL: SPACE MYSTERY** adalah game *social deduction* 2D *top-down* berlatar kapal luar angkasa **STARFALL-I** dengan **14 ruangan terhubung**. Pemain dibagi menjadi **Crewmate** (yang harus menyelesaikan berbagai mini-game *task*, memantau CCTV/Admin, dan menemukan penyusup) dan **Impostor** (yang menyabotase sistem kapal, berpindah lewat ventilasi, dan mengeliminasi kru tanpa saksi).
 
-Seluruh sistem—mulai dari *rendering* 60 FPS *delta-time*, animasi karakter & kustomisasi, audio prosedural, kecerdasan buatan (*state-machine AI*), hingga server multiplayer otoritatif—diimplementasikan murni menggunakan pustaka standar **Java SE**.
+Seluruh sistem mulai dari *rendering* 60 FPS *delta-time*, animasi karakter & kustomisasi, audio prosedural, kecerdasan buatan (*state-machine AI*), hingga server multiplayer otoritatif diimplementasikan murni menggunakan pustaka standar **Java SE**.
 
 ---
 
