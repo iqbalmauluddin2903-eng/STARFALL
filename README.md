@@ -38,7 +38,7 @@
 | Informasi | Detail |
 | :--- | :--- |
 | **Nama Author** | `Iqbal Mauluddin` |
-| **NIM** | `[F1D02510011` |
+| **NIM** | `F1D02510011` |
 | **Universitas** | Universitas Mataram |
 | **Fakultas / Prodi** | Fakultas Teknik / Program Studi Teknik Informatika |
 | **Mata Kuliah** | Pemrograman Berorientasi Objek (PBO) |
